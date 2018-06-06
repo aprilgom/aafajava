@@ -98,39 +98,56 @@ public class OneDrive implements CloudDrive{
   }
   public void uploadFile(java.io.File file,String filename){
     try{
-      Map<String,Object> c = new HashMap<String,Object>();
-      c.put("name",filename);
-
-      HttpRequest c_req = httpRequestFactory.buildPostRequest(
-        new GenericUrl(new URL(
-           "https://graph.microsoft.com/v1.0"+
-          "/me/drive/items/children"
-        ))
-        ,new JsonHttpContent(JSON_FACTORY,c)
-      );
-      c_req.getHeaders()
-                    .setAuthorization("Bearer "+access_token);
-      c_req.execute();
-
-      /*
-      Map<String,Object> itembody = new HashMap<String,Object>();
-      itembody.put("@microsoft.graph.conflictBehavior","rename");
-      itembody.put("name",filename);
+     
       Map<String,Object> uploadsessionbody = new HashMap<String,Object>();
-      uploadsessionbody.put("item",itembody);
+      uploadsessionbody.put("@microsoft.graph.conflictBehavior","rename");
+      uploadsessionbody.put("name",filename);
+       /*
+      Map<String,Object> uss = new HashMap<String,Object>();
+      Map<String,Object> hashesType = new HashMap<String,Object>();
+      hashesType.put("crc32Hash",null);
+      hashesType.put("sha1Hash",null);
+      hashesType.put("quickXorHash",null);
+      uss.put("hashes",hashesType);
+      uss.put("mimeType","application/octet-stream");
       
+      Map<String,Object> fjd = new HashMap<String,Object>();
+      fjd.put("name",filename);
+      fjd.put("file",uss);
+
+
+
+      HttpRequest usreq = httpRequestFactory.buildPostRequest(
+        new GenericUrl(new URL(
+          "https://graph.microsoft.com/v1.0"+
+          "/me/drive/items/92660A9B05948702!877/createUploadSession"
+        )),
+        new JsonHttpContent(JSON_FACTORY,fjd)
+      );
+      usreq.getHeaders()
+                    .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
+      usreq.getHeaders()
+                    .setAuthorization("Bearer "+access_token);
+      usreq.execute();
+      System.out.println("fdasfdasf");
+      */
       //create upload session
       HttpRequest create_upload_session_req = httpRequestFactory.buildPostRequest(
         new GenericUrl(new URL(
           "https://graph.microsoft.com/v1.0"+
-          "/drives/root:/"+filename+":/createUploadSession"
+          "/drive/root:/"+filename+":/createUploadSession"
         )),
         new JsonHttpContent(JSON_FACTORY,uploadsessionbody)
       );
       create_upload_session_req.getHeaders()
                     .setAuthorization("Bearer "+access_token);
+
+      create_upload_session_req.getHeaders()
+                    .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
+                    
       String upload_session_json = create_upload_session_req.execute()
                               .parseAsString();
+      System.out.println("fdasfdasf");
       JsonParser parser = new JsonParser();
       JsonElement element = parser.parse(upload_session_json);
       String sessionUrl = element.getAsJsonObject().get("uploadUrl").getAsString();
@@ -176,7 +193,7 @@ public class OneDrive implements CloudDrive{
         upload_req.execute();
       }
       
-    */
+
 
     }catch(Exception e){
       System.out.println(e);
