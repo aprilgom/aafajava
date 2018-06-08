@@ -140,14 +140,11 @@ public class OneDrive implements CloudDrive{
         new JsonHttpContent(JSON_FACTORY,uploadsessionbody)
       );
       create_upload_session_req.getHeaders()
-                    .setAuthorization("Bearer "+access_token);
-
-      create_upload_session_req.getHeaders()
+                    .setAuthorization("Bearer "+access_token)
                     .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
                     
       String upload_session_json = create_upload_session_req.execute()
                               .parseAsString();
-      System.out.println("fdasfdasf");
       JsonParser parser = new JsonParser();
       JsonElement element = parser.parse(upload_session_json);
       String sessionUrl = element.getAsJsonObject().get("uploadUrl").getAsString();
@@ -157,23 +154,33 @@ public class OneDrive implements CloudDrive{
       byte[] filebyte = new byte[(int)file.length()];
       fis.read(filebyte);
       fis.close();
+      
       //upload
-      if(file.length() > SEND_LIMIT){
-        for(int i = 0;i<(int)file.length()/SEND_LIMIT-1;i++){
+      int length_of_file = (int)file.length();
+
+      if(length_of_file > SEND_LIMIT){
+        for(int i = 0;i<length_of_file/SEND_LIMIT;i++){
           int start_of_part = i*SEND_LIMIT;
-          int end_of_part = start_of_part + SEND_LIMIT-1;
+          int end_of_part = start_of_part + SEND_LIMIT;
           HttpRequest upload_req = httpRequestFactory.buildPutRequest(
             new GenericUrl(new URL(sessionUrl)),
             new ByteArrayContent("application/octet-stream",
               Arrays.copyOfRange(filebyte,start_of_part,end_of_part)
             )
           );
+         
           upload_req.getHeaders()
-                    .setAuthorization("Bearer "+access_token);
+                    .setAuthorization("Bearer "+access_token)
+                    .setContentLength((long)SEND_LIMIT)
+                    .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
+          System.out.println(upload_req.getHeaders().getContentRange());
           upload_req.execute();
+          
+          System.out.println("part"+i);
         }
-        int start_of_part = ((int)file.length()/SEND_LIMIT)*SEND_LIMIT;
-        int end_of_part = (int)file.length()-1;
+        int start_of_part = (length_of_file/SEND_LIMIT)*SEND_LIMIT;
+        System.out.println(start_of_part);
+        int end_of_part = length_of_file;
         HttpRequest upload_req = httpRequestFactory.buildPutRequest(
             new GenericUrl(new URL(sessionUrl)),
             new ByteArrayContent("application/octet-stream",
@@ -181,7 +188,8 @@ public class OneDrive implements CloudDrive{
             )
         );
         upload_req.getHeaders()
-                  .setAuthorization("Bearer "+access_token);
+                  .setAuthorization("Bearer "+access_token)
+                  .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
         upload_req.execute();
       }else{
         HttpRequest upload_req = httpRequestFactory.buildPutRequest(
@@ -192,9 +200,6 @@ public class OneDrive implements CloudDrive{
                   .setAuthorization("Bearer "+access_token);
         upload_req.execute();
       }
-      
-
-
     }catch(Exception e){
       System.out.println(e);
     }
