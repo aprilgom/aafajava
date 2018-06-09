@@ -9,7 +9,7 @@ public class DriveManager{
     private static Map<String,CloudDrive> CloudDriveMap = new HashMap<String,CloudDrive>();
     private static Map<String,Long> DriveSpaceMap = new HashMap<String,Long>();
     private static Map<String,List<String>> FileTableMap ;
-    
+
     public DriveManager(){
         try{
             FileInputStream fis = new FileInputStream("filetablemap.bin");
@@ -75,9 +75,13 @@ public class DriveManager{
                         DriveSpaceMap.put(key,(long)(leftspace-SEND_LIMIT));
                         left_file_volume -= SEND_LIMIT;
                     }
-                    CloudDriveMap.get(key).uploadFile(Arrays.copyOfRange(filebyte,start_of_part,end_of_part),filename + fileorder);
-                    System.out.println(start_of_part + " ~ " + end_of_part + "sended to "+key);
-                    
+                    //CloudDriveMap.get(key).uploadFile(Arrays.copyOfRange(filebyte,start_of_part,end_of_part),filename + fileorder);
+                    //System.out.println(start_of_part + " ~ " + end_of_part + "sended to "+key);
+                    UploadThread uploadthread = new UploadThread(CloudDriveMap.get(key),
+                    Arrays.copyOfRange(filebyte,start_of_part,end_of_part),
+                    filename+fileorder);
+                    uploadthread.start();
+
                     start_of_part = end_of_part;
                     fileorder += 1;
                     filetable.add(key);
@@ -98,10 +102,22 @@ public class DriveManager{
             java.io.File result = new File(filename);
             FileOutputStream fos = new FileOutputStream(result);
             List<String> filetable = FileTableMap.get(filename);
-            int fileorder = 0;
+            List<DownloadThread> downloadThreadList = new ArrayList<DownloadThread>();
+            int fileorder = -1;
             for(String whichdrive:filetable){
-                CloudDriveMap.get(whichdrive).downloadFile(filename + fileorder).writeTo(fos);
                 fileorder++;
+                System.out.println("making thread"+fileorder);
+                DownloadThread dt = new DownloadThread(CloudDriveMap.get(whichdrive),filename,fileorder);
+                downloadThreadList.add(dt);
+                dt.start();
+            }
+
+            for(DownloadThread dt:downloadThreadList){
+
+              System.out.println("try to write");
+              dt.join();
+              dt.getResult().writeTo(fos);
+              System.out.println("writed");
             }
         }catch(Exception e){
             System.out.println(e);
@@ -111,4 +127,42 @@ public class DriveManager{
         CloudDriveMap.put(drivename,drive);
         DriveSpaceMap.put(drivename,drive.getSpaceLeft());
     }
+}
+
+class DownloadThread extends Thread{
+  private CloudDrive cloudDrive;
+  private ByteArrayOutputStream bos;
+  private int fileorder;
+  private String filename;
+  public DownloadThread(CloudDrive drive,String name,int order){
+    cloudDrive = drive;
+    filename = name;
+    fileorder = order;
+  }
+  public void run(){
+    try{
+      System.out.println("Thread"+fileorder+" tries to download file");
+      bos = cloudDrive.downloadFile(filename + fileorder);
+      System.out.println("Thread"+fileorder+" download success");
+    }catch(Exception e){
+      System.out.println("Thread"+fileorder+ " error while downloading "+e);
+    }
+  }
+  public ByteArrayOutputStream getResult(){
+    return bos;
+  }
+}
+class UploadThread extends Thread{
+  private CloudDrive cloudDrive;
+  public byte[] bytearray;
+  public String filename;
+  public UploadThread(CloudDrive drive,byte[] bytearr,String name){
+    cloudDrive = drive;
+    bytearray = bytearr;
+    filename = name;
+  }
+  public void run(){
+    System.out.println("Thread tries to upload file");
+    cloudDrive.uploadFile(bytearray,filename);
+  }
 }

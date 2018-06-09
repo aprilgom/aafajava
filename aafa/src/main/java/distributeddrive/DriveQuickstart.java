@@ -18,12 +18,12 @@ public class DriveQuickstart {
           driveManager.addDrive("Dropbox",new Dropbox());
           driveManager.addDrive("OneDrive",new OneDrive());
 
-          
 
-          java.io.File file = new java.io.File("files/testfile2.rar");
+
+          java.io.File file = new java.io.File("files/tetra.rar");
 
           //driveManager.uploadFile(file);
-          driveManager.downloadFile("testfile2.rar");
+          driveManager.downloadFile("tetra.rar");
           byte[] filebyte = new byte[(int)file.length()];
           FileInputStream fis = new FileInputStream(file);
           fis.read(filebyte);
