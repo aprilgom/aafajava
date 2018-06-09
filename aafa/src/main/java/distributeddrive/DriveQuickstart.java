@@ -18,27 +18,17 @@ public class DriveQuickstart {
           driveManager.addDrive("Dropbox",new Dropbox());
           driveManager.addDrive("OneDrive",new OneDrive());
 
-
-
           java.io.File file = new java.io.File("files/tetra.rar");
 
           //driveManager.uploadFile(file);
-          driveManager.downloadFile("tetra.rar");
+          //driveManager.downloadFile("tetra.rar");
+          //driveManager.listFile();
+          driveManager.deleteFile("tetra.rar");
           byte[] filebyte = new byte[(int)file.length()];
           FileInputStream fis = new FileInputStream(file);
           fis.read(filebyte);
           fis.close();
-          //googleDrive.uploadFile(filebyte,"name");
-          //dropbox.uploadFile(filebyte,"name");
-          //oneDrive.uploadFile(filebyte,"testfile.rar");
-          //java.io.File downfile = new java.io.File("files/name");
-          //FileOutputStream fos = new FileOutputStream(downfile);
-          //googleDrive.downloadFile("name").writeTo(fos);
-          //dropbox.downloadFile("photo.jpg").writeTo(fos);
-          //oneDrive.downloadFile("testfile.rar").writeTo(fos);
-          //System.out.println(googleDrive.getSpaceLeft());
-          //System.out.println(dropbox.getSpaceLeft());
-          //System.out.println(oneDrive.getSpaceLeft());
+
         }catch(Exception e){
 
         }

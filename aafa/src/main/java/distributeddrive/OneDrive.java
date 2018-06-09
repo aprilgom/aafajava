@@ -98,7 +98,7 @@ public class OneDrive implements CloudDrive{
   }
   public void uploadFile(byte[] file,String filename){
     try{
-     
+
       Map<String,Object> uploadsessionbody = new HashMap<String,Object>();
       uploadsessionbody.put("@microsoft.graph.conflictBehavior","rename");
       uploadsessionbody.put("name",filename);
@@ -110,7 +110,7 @@ public class OneDrive implements CloudDrive{
       hashesType.put("quickXorHash",null);
       uss.put("hashes",hashesType);
       uss.put("mimeType","application/octet-stream");
-      
+
       Map<String,Object> fjd = new HashMap<String,Object>();
       fjd.put("name",filename);
       fjd.put("file",uss);
@@ -142,7 +142,7 @@ public class OneDrive implements CloudDrive{
       create_upload_session_req.getHeaders()
                     .setAuthorization("Bearer "+access_token)
                     .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
-                    
+
       String upload_session_json = create_upload_session_req.execute()
                               .parseAsString();
       JsonParser parser = new JsonParser();
@@ -156,7 +156,7 @@ public class OneDrive implements CloudDrive{
       fis.read(filebyte);
       fis.close();
       */
-      
+
       //upload
       int length_of_file = file.length;
 
@@ -170,14 +170,14 @@ public class OneDrive implements CloudDrive{
               Arrays.copyOfRange(file,start_of_part,end_of_part)
             )
           );
-         
+
           upload_req.getHeaders()
                     .setAuthorization("Bearer "+access_token)
                     .setContentLength((long)SEND_LIMIT)
                     .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
           System.out.println(upload_req.getHeaders().getContentRange());
           upload_req.execute();
-          
+
           System.out.println("part"+i);
         }
         int start_of_part = (length_of_file/SEND_LIMIT)*SEND_LIMIT;
@@ -215,14 +215,27 @@ public class OneDrive implements CloudDrive{
       );
       download_location_req.getHeaders().setAuthorization("Bearer "+access_token);
       HttpResponse location_res = download_location_req.execute();
-      
-      
+
+
       ByteArrayOutputStream result = new ByteArrayOutputStream();
       location_res.download(result);
       return result;
     }catch(Exception e){
       System.out.println(e);
       return null;
+    }
+  }
+
+  public void deleteFile(String filename){
+    try{
+      HttpRequest delete_req = httpRequestFactory.buildDeleteRequest(
+        new GenericUrl(new URL( "https://graph.microsoft.com/v1.0"+
+            "/drive/root:/"+filename))
+      );
+      delete_req.getHeaders().setAuthorization("Bearer "+access_token);
+      delete_req.execute();
+    }catch(Exception e){
+      System.out.println(e);
     }
   }
 

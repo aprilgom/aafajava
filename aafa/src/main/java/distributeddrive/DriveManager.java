@@ -123,6 +123,28 @@ public class DriveManager{
             System.out.println(e);
         }
     }
+    public void deleteFile(String filename){
+      try{
+        List<String> filetable = FileTableMap.get(filename);
+        int fileorder = 0;
+        for(String whichdrive:filetable){
+          CloudDriveMap.get(whichdrive).deleteFile(filename+fileorder);
+          fileorder++;
+        }
+        FileTableMap.remove(filename);
+        FileOutputStream fos = new FileOutputStream("filetablemap.bin");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(FileTableMap);
+        oos.close();
+      }catch(Exception e){
+        System.out.println(e);
+      }
+    }
+    public void listFile(){
+      for(String key:FileTableMap.keySet()){
+        System.out.println(key);
+      }
+    }
     public void addDrive(String drivename,CloudDrive drive){
         CloudDriveMap.put(drivename,drive);
         DriveSpaceMap.put(drivename,drive.getSpaceLeft());

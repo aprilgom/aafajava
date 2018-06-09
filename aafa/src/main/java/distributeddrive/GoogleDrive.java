@@ -147,6 +147,20 @@ public class GoogleDrive implements CloudDrive{
       return null;
     }
   }
+  public void deleteFile(String filename){
+    try{
+      FileList result = service.files().list()
+                        .setQ("name=\'"+filename+"\'") // finds file that equals 'filename'
+                        .execute();
+      String fileId = "default";
+      for(File file : result.getFiles()){
+        fileId = file.getId();
+      }//there could be more than one file..
+      service.files().delete(fileId).execute();
+    }catch(Exception e){
+      System.out.println("google drive error while deleting file...:"+e);
+    }
+  }
   public long getSpaceLeft(){
     try{
       About in = service.about().get()

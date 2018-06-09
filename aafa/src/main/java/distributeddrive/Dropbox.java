@@ -49,6 +49,13 @@ public class Dropbox implements CloudDrive{
       return null;
     }
   }
+  public void deleteFile(String filename){
+    try{
+      client.files().delete("/"+filename);
+    }catch(Exception e){
+      System.out.println(e);
+    }
+  }
   public long getSpaceLeft(){
     try{
       SpaceUsage spaceusage = client.users().getSpaceUsage();
