@@ -28,7 +28,7 @@ public class DriveManager{
         }catch(Exception e){
             System.out.println("error while loading filetablemap"+e);
         }
-        System.out.println(FileTableMap.toString());
+        
     }
 
     public void uploadFile(java.io.File file){

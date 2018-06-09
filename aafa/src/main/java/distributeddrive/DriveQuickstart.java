@@ -12,22 +12,37 @@ public class DriveQuickstart {
     public static void main(String... args) {
         // Build a new authorized API client service.
         try{
-
+          String filename;
           DriveManager driveManager = new DriveManager();
           driveManager.addDrive("GoogleDrive",new GoogleDrive());
           driveManager.addDrive("Dropbox",new Dropbox());
           driveManager.addDrive("OneDrive",new OneDrive());
 
-          java.io.File file = new java.io.File("files/tetra.rar");
+          switch(args[0]){
+            case "download":
+            filename = args[1];
+            driveManager.downloadFile(filename);
+            break;
+            case "upload":
+            filename = args[1];
+            java.io.File file = new java.io.File(filename);
+            driveManager.uploadFile(file);
+            break;
+            case "delete":
+            filename = args[1];
+            driveManager.deleteFile(filename);
+            break;
+            case "list":
+            driveManager.listFile();
+            break;
+          }
+
 
           //driveManager.uploadFile(file);
           //driveManager.downloadFile("tetra.rar");
           //driveManager.listFile();
-          driveManager.deleteFile("tetra.rar");
-          byte[] filebyte = new byte[(int)file.length()];
-          FileInputStream fis = new FileInputStream(file);
-          fis.read(filebyte);
-          fis.close();
+          //driveManager.deleteFile("tetra.rar");
+
 
         }catch(Exception e){
 

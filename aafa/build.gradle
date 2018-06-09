@@ -9,7 +9,16 @@ version = '1.0'
 
 applicationDefaultJvmArgs = ['-Xms4096m', '-Xmx4096m']
 
-
+jar {
+  manifest{
+    attributes 'Main-Class' : 'distributeddrive.DriveQuickstart'
+  }
+  dependsOn configurations.runtime
+    from{
+      configurations.compile.collect{it.isDirectory()? it:zipTree(it)}
+    }
+  archiveName "aafa.jar"
+}
 
 repositories {
     mavenCentral()

@@ -199,7 +199,8 @@ public class OneDrive implements CloudDrive{
           new ByteArrayContent("application/octet-stream",file)
         );
         upload_req.getHeaders()
-                  .setAuthorization("Bearer "+access_token);
+                  .setAuthorization("Bearer "+access_token)
+                  .setContentRange("bytes "+"0-"+(length_of_file-1)+"/"+length_of_file);
         upload_req.execute();
       }
     }catch(Exception e){
