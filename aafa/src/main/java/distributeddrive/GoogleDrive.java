@@ -111,11 +111,9 @@ public class GoogleDrive implements CloudDrive{
       );
 
       init_req.getHeaders().setAuthorization("Bearer "+credential.getAccessToken());
-      System.out.println("access token:"+credential.getAccessToken());
       //init_req.getHeaders().setContentLength((long)0); - this behavior is done by EmptyContent()
 
       String sessionUrl = init_req.execute().getHeaders().getLocation();
-      System.out.println("location:"+sessionUrl);
 
       HttpRequest upload_req = httpRequestFactory.buildPutRequest(
         new GenericUrl(new URL(sessionUrl)),

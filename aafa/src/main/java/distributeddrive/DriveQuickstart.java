@@ -18,6 +18,7 @@ public class DriveQuickstart {
           driveManager.addDrive("Dropbox",new Dropbox());
           driveManager.addDrive("OneDrive",new OneDrive());
 
+          
           switch(args[0]){
             case "download":
             filename = args[1];
@@ -25,8 +26,7 @@ public class DriveQuickstart {
             break;
             case "upload":
             filename = args[1];
-            java.io.File file = new java.io.File(filename);
-            driveManager.uploadFile(file);
+            driveManager.uploadFile(filename);
             break;
             case "delete":
             filename = args[1];
@@ -36,7 +36,7 @@ public class DriveQuickstart {
             driveManager.listFile();
             break;
           }
-
+          
 
           //driveManager.uploadFile(file);
           //driveManager.downloadFile("tetra.rar");
