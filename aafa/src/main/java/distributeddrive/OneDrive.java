@@ -98,103 +98,103 @@ public class OneDrive implements CloudDrive{
   }
   public void uploadFile(byte[] file,String filename){
     while(true){
-    try{
+      try{
 
-      Map<String,Object> uploadsessionbody = new HashMap<String,Object>();
-      uploadsessionbody.put("@microsoft.graph.conflictBehavior","rename");
-      uploadsessionbody.put("name",filename);
-      
-      HttpRequest create_upload_session_req = httpRequestFactory.buildPostRequest(
-        new GenericUrl(new URL(
-          "https://graph.microsoft.com/v1.0"+
-          "/drive/root:/"+filename+":/createUploadSession"
-        )),
-        new JsonHttpContent(JSON_FACTORY,uploadsessionbody)
-      );
-      create_upload_session_req.getHeaders()
-                    .setAuthorization("Bearer "+access_token)
-                    .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
+        Map<String,Object> uploadsessionbody = new HashMap<String,Object>();
+        uploadsessionbody.put("@microsoft.graph.conflictBehavior","rename");
+        uploadsessionbody.put("name",filename);
+        
+        HttpRequest create_upload_session_req = httpRequestFactory.buildPostRequest(
+          new GenericUrl(new URL(
+            "https://graph.microsoft.com/v1.0"+
+            "/drive/root:/"+filename+":/createUploadSession"
+          )),
+          new JsonHttpContent(JSON_FACTORY,uploadsessionbody)
+        );
+        create_upload_session_req.getHeaders()
+                      .setAuthorization("Bearer "+access_token)
+                      .setAccept("application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8");
 
-      String upload_session_json = create_upload_session_req.execute()
-                              .parseAsString();
-      JsonParser parser = new JsonParser();
-      JsonElement element = parser.parse(upload_session_json);
-      String sessionUrl = element.getAsJsonObject().get("uploadUrl").getAsString();
+        String upload_session_json = create_upload_session_req.execute()
+                                .parseAsString();
+        JsonParser parser = new JsonParser();
+        JsonElement element = parser.parse(upload_session_json);
+        String sessionUrl = element.getAsJsonObject().get("uploadUrl").getAsString();
 
-      //java.io.File to byte[]
-      /*
-      FileInputStream fis = new FileInputStream(file);
-      byte[] filebyte = new byte[(int)file.length()];
-      fis.read(filebyte);
-      fis.close();
-      */
+        //java.io.File to byte[]
+        /*
+        FileInputStream fis = new FileInputStream(file);
+        byte[] filebyte = new byte[(int)file.length()];
+        fis.read(filebyte);
+        fis.close();
+        */
 
-      //upload
-      int length_of_file = file.length;
+        //upload
+        int length_of_file = file.length;
 
-      if(length_of_file > SEND_LIMIT){
-        for(int i = 0;i<length_of_file/SEND_LIMIT;i++){
-          int start_of_part = i*SEND_LIMIT;
-          int end_of_part = start_of_part + SEND_LIMIT;
+        if(length_of_file > SEND_LIMIT){
+          for(int i = 0;i<length_of_file/SEND_LIMIT;i++){
+            int start_of_part = i*SEND_LIMIT;
+            int end_of_part = start_of_part + SEND_LIMIT;
+            HttpRequest upload_req = httpRequestFactory.buildPutRequest(
+              new GenericUrl(new URL(sessionUrl)),
+              new ByteArrayContent("application/octet-stream",
+                Arrays.copyOfRange(file,start_of_part,end_of_part)
+              )
+            );
+
+            upload_req.getHeaders()
+                      .setAuthorization("Bearer "+access_token)
+                      .setContentLength((long)SEND_LIMIT)
+                      .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
+            upload_req.execute();
+
+          }
+          int start_of_part = (length_of_file/SEND_LIMIT)*SEND_LIMIT;
+          int end_of_part = length_of_file;
           HttpRequest upload_req = httpRequestFactory.buildPutRequest(
-            new GenericUrl(new URL(sessionUrl)),
-            new ByteArrayContent("application/octet-stream",
-              Arrays.copyOfRange(file,start_of_part,end_of_part)
-            )
+              new GenericUrl(new URL(sessionUrl)),
+              new ByteArrayContent("application/octet-stream",
+                Arrays.copyOfRange(file,start_of_part,end_of_part)
+              )
           );
-
           upload_req.getHeaders()
                     .setAuthorization("Bearer "+access_token)
-                    .setContentLength((long)SEND_LIMIT)
                     .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
           upload_req.execute();
-
-        }
-        int start_of_part = (length_of_file/SEND_LIMIT)*SEND_LIMIT;
-        int end_of_part = length_of_file;
-        HttpRequest upload_req = httpRequestFactory.buildPutRequest(
+        }else{
+          HttpRequest upload_req = httpRequestFactory.buildPutRequest(
             new GenericUrl(new URL(sessionUrl)),
-            new ByteArrayContent("application/octet-stream",
-              Arrays.copyOfRange(file,start_of_part,end_of_part)
-            )
-        );
-        upload_req.getHeaders()
-                  .setAuthorization("Bearer "+access_token)
-                  .setContentRange("bytes "+start_of_part+"-"+(end_of_part-1)+"/"+length_of_file);
-        upload_req.execute();
-      }else{
-        HttpRequest upload_req = httpRequestFactory.buildPutRequest(
-          new GenericUrl(new URL(sessionUrl)),
-          new ByteArrayContent("application/octet-stream",file)
-        );
-        upload_req.getHeaders()
-                  .setAuthorization("Bearer "+access_token)
-                  .setContentRange("bytes "+"0-"+(length_of_file-1)+"/"+length_of_file);
-        upload_req.execute();
+            new ByteArrayContent("application/octet-stream",file)
+          );
+          upload_req.getHeaders()
+                    .setAuthorization("Bearer "+access_token)
+                    .setContentRange("bytes "+"0-"+(length_of_file-1)+"/"+length_of_file);
+          upload_req.execute();
+        }
+        break;
+      }catch(Exception e){
+        System.out.println("error while uploading from onedrive:"+filename+e);
       }
-      break;
-    }catch(Exception e){
-      System.out.println("error while uploading from onedrive:"+filename+e);
-    }
     }
   }
   public ByteArrayOutputStream downloadFile(String filename){
-    try{
-      HttpRequest download_location_req = httpRequestFactory.buildGetRequest(
-        new GenericUrl(new URL( "https://graph.microsoft.com/v1.0"+
-            "/drive/root:/"+filename+":/content"))
-      );
-      download_location_req.getHeaders().setAuthorization("Bearer "+access_token);
-      HttpResponse location_res = download_location_req.execute();
-
-
-      ByteArrayOutputStream result = new ByteArrayOutputStream();
-      location_res.download(result);
-      return result;
-    }catch(Exception e){
-      System.out.println(e);
-      return null;
+    ByteArrayOutputStream result = new ByteArrayOutputStream();
+    while(true){
+      try{
+        HttpRequest download_location_req = httpRequestFactory.buildGetRequest(
+          new GenericUrl(new URL( "https://graph.microsoft.com/v1.0"+
+              "/drive/root:/"+filename+":/content"))
+        );
+        download_location_req.getHeaders().setAuthorization("Bearer "+access_token);
+        HttpResponse location_res = download_location_req.execute();
+        location_res.download(result);
+        break;
+      }catch(Exception e){
+        System.out.println("error while downloading from onedrive "+filename+e);
+      }
     }
+    return result;
   }
 
   public void deleteFile(String filename){

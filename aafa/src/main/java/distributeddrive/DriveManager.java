@@ -11,12 +11,15 @@ public class DriveManager{
     private static Map<String,CloudDrive> CloudDriveMap = new HashMap<String,CloudDrive>();
     private static Map<String,Long> DriveSpaceMap = new HashMap<String,Long>();
     private static Map<String,List<String>> FileTableMap ;
+    private static Map<String,Integer> DownloadFailMap;
     private static int THREAD_LIMIT = 4;
+    private static int downloadfailresumenum = 0;
     public DriveManager(){
         try{
             FileInputStream fis = new FileInputStream("filetablemap.bin");
             ObjectInputStream ois = new ObjectInputStream(fis);
             FileTableMap = (Map<String,List<String>>)ois.readObject();
+            
         }catch(FileNotFoundException filenotfounde){
             try{
                 FileTableMap = new HashMap<String,List<String>>();
@@ -24,6 +27,7 @@ public class DriveManager{
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 oos.writeObject(FileTableMap);
                 oos.close();
+                
             }catch(Exception e){
                 System.out.println("error while making new filetablemap"+e);
             }
@@ -31,6 +35,25 @@ public class DriveManager{
             System.out.println("error while loading filetablemap"+e);
         }
         
+        try{
+            FileInputStream failedfis = new FileInputStream("downloadfailmap.bin");
+            ObjectInputStream failedois = new ObjectInputStream(failedfis);
+            DownloadFailMap = (Map<String,Integer>)failedois.readObject();
+
+        }catch(FileNotFoundException filenotfounde){
+            try{
+                DownloadFailMap = new HashMap<String,Integer>();
+                FileOutputStream failedfos = new FileOutputStream("downloadfailmap.bin");
+                ObjectOutputStream failedoos = new ObjectOutputStream(failedfos);
+                failedoos.writeObject(DownloadFailMap);
+                failedoos.close();
+                
+            }catch(Exception e){
+                System.out.println("error while making new downloadfailmap"+e);
+            }
+        }catch(Exception e){
+            System.out.println("error while loading downloadfailmap"+e);
+        }
     }
 
     public void uploadFile(String filepath){
@@ -145,22 +168,39 @@ public class DriveManager{
     public void downloadFile(String filename){
         try{
             java.io.File result = new File(filename);
-            FileOutputStream fos = new FileOutputStream(result);
+            FileOutputStream fos;
             List<String> filetable = FileTableMap.get(filename);
+            
+            try{
+                downloadfailresumenum = DownloadFailMap.get(filename).intValue();
+                System.out.println("downloadfailresumenum:"+downloadfailresumenum);
+            }catch(ClassCastException cce){
+                System.out.println(cce +cce.getMessage()+ DownloadFailMap.get(filename).toString() + downloadfailresumenum);
+            }catch(Exception e){
+                System.out.println(e + " failresume = 0");
+            }
+            if(downloadfailresumenum == 0){
+                fos = new FileOutputStream(result);
+            }else{
+                fos = new FileOutputStream(result,true);
+            }
+            
             List<DownloadThread> downloadThreadList = new ArrayList<DownloadThread>();
-            int fileorder = -1;
+            int fileorder = downloadfailresumenum -1;
             int thread_num = 0;
             for(String whichdrive:filetable){
                 fileorder++;
-                System.out.println("download "+filename+fileorder+whichdrive);
+                System.out.println("download "+filename+" "+fileorder+ " " +whichdrive);
                 DownloadThread dt = new DownloadThread(CloudDriveMap.get(whichdrive),filename,fileorder);
                 downloadThreadList.add(dt);
                 dt.start();
+                
                 thread_num++;
                 if(thread_num >= THREAD_LIMIT ){
                     System.out.println("try to write "+filename+(fileorder-THREAD_LIMIT+1)+" from "+whichdrive);
                     downloadThreadList.get(0).join();
                     downloadThreadList.get(0).getResult().writeTo(fos);
+                    downloadfailresumenum++;
                     downloadThreadList.remove(0);
                     System.out.println("writed "+filename+(fileorder-THREAD_LIMIT+1));
                     thread_num--;
@@ -172,7 +212,16 @@ public class DriveManager{
             }
             
         }catch(Exception e){
-            System.out.println("Drive manager error while downloading file"+e);
+            try{
+                System.out.println("Drive manager error while downloading file "+e);
+                DownloadFailMap.put(filename,downloadfailresumenum);
+                FileOutputStream failfos = new FileOutputStream("downloadfailmap.bin");
+                ObjectOutputStream failoos = new ObjectOutputStream(failfos);
+                failoos.writeObject(DownloadFailMap);
+                failoos.close();
+            }catch(Exception failresumee){
+                System.out.println("error while writing failresumnum"+failresumee);
+            }
         }
     }
     public void deleteFile(String filename){

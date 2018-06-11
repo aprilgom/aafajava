@@ -34,7 +34,7 @@ public class Dropbox implements CloudDrive{
       FileMetadata metadata = client.files().uploadBuilder("/"+filename).
                               uploadAndFinish(in);
     }catch(Exception e){
-
+      System.out.println(e);
     }
   }
 
@@ -45,7 +45,7 @@ public class Dropbox implements CloudDrive{
       downloader.download(out);
       return out;
     }catch(Exception e){
-      System.out.println(e.getMessage());
+      System.out.println("error while download from dropbox" + e);
       return null;
     }
   }
